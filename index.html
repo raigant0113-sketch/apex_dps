@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apex Legends シーズン30 武器DPS・TTK表</title>
+<style>
+  :root {
+    --bg: #0f1419;
+    --card: #1a2332;
+    --border: #2d3a4f;
+    --text: #e7ecf3;
+    --muted: #8b9bb4;
+    --accent: #3b82f6;
+    --green: #22c55e;
+    --orange: #f59e0b;
+    --purple: #a855f7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 16px;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 8px; }
+  .sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 16px; }
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+    align-items: center;
+  }
+  .toggle-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--card);
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .toggle-group label { font-size: 0.9rem; cursor: pointer; user-select: none; }
+  input[type="checkbox"] {
+    width: 18px; height: 18px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  select, button {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  .legend {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 0.85rem;
+  }
+  .legend strong { color: var(--accent); }
+  .type-colors {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 0.8rem;
+  }
+  .type-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    min-width: 1020px;
+  }
+  th, td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    background: #152033;
+    color: var(--muted);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  th:hover { color: var(--text); }
+  th .sort-icon {
+    display: inline-block;
+    margin-left: 4px;
+    opacity: 0.4;
+    font-size: 0.75rem;
+  }
+  th.sorted-asc .sort-icon,
+  th.sorted-desc .sort-icon { opacity: 1; color: var(--accent); }
+  tr:hover td { background: rgba(59, 130, 246, 0.08); }
+  .weapon { font-weight: 600; }
+  .dps { color: var(--green); font-weight: 600; }
+  .rpm { color: #94a3b8; }
+  .delay-note { color: var(--orange); font-size: 0.75rem; }
+  .stock-note { color: var(--purple); font-size: 0.75rem; }
+  .bolt-note { color: #38bdf8; font-size: 0.75rem; }
+
+  /* 種別色 */
+  .type-SMG { background: rgba(59, 130, 246, 0.15); }
+  .type-AR { background: rgba(34, 197, 94, 0.12); }
+  .type-LMG { background: rgba(249, 115, 22, 0.12); }
+  .type-SG { background: rgba(239, 68, 68, 0.12); }
+  .type-ピストル { background: rgba(168, 85, 247, 0.12); }
+  .type-マークスマン { background: rgba(14, 165, 233, 0.12); }
+  .type-スナイパー { background: rgba(234, 179, 8, 0.12); }
+
+  /* 弾薬色 */
+  .ammo-ライト { background: rgba(249, 115, 22, 0.15); }
+  .ammo-ヘビー { background: rgba(134, 239, 172, 0.15); }
+  .ammo-エネルギー { background: rgba(163, 230, 53, 0.18); }
+  .ammo-ショットガン { background: rgba(239, 68, 68, 0.15); }
+  .ammo-スナイパー { background: rgba(56, 189, 248, 0.18); }
+  .ammo-ケアパケ { background: rgba(236, 72, 153, 0.15); }
+
+  .badge-SMG { background: #3b82f6; color: #fff; }
+  .badge-AR { background: #22c55e; color: #fff; }
+  .badge-LMG { background: #f97316; color: #fff; }
+  .badge-SG { background: #ef4444; color: #fff; }
+  .badge-ピストル { background: #a855f7; color: #fff; }
+  .badge-マークスマン { background: #0ea5e9; color: #fff; }
+  .badge-スナイパー { background: #eab308; color: #111; }
+
+  .badge-ライト { background: #f97316; color: #fff; }
+  .badge-ヘビー { background: #86efac; color: #14532d; }
+  .badge-エネルギー { background: #a3e635; color: #1a2e05; }
+  .badge-ショットガン { background: #ef4444; color: #fff; }
+  .badge-スナイパー { background: #0ea5e9; color: #fff; }
+  .badge-ケアパケ { background: #ec4899; color: #fff; }
+  .badge-アロー { background: #eab308; color: #111; }
+  .ammo-アロー { background: rgba(234, 179, 8, 0.15); }
+  .badge-ammo-スナイパー { background: #38bdf8; color: #0c4a6e; border: 1px solid #7dd3fc; }
+
+  .footer {
+    margin-top: 24px;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+</style>
+</head>
+<body>
+
+<h1>Apex Legends シーズン30 武器DPS・TTK表</h1>
+<p class="sub">胴体ダメージ基準・理論値（全弾命中想定） / 2026年8月時点</p>
+
+<div class="legend">
+  <strong>使い方：</strong><br>
+  ・ディレイ / ラピッドストック / ショットガンボルト / 色分け（武器種⇔弾薬） / RPM⇔RPS を切り替え可能<br>
+  ・各列見出しをクリックでソート
+  <div class="type-colors" id="colorLegend">
+    <span class="type-badge badge-SMG">SMG</span>
+    <span class="type-badge badge-AR">AR</span>
+    <span class="type-badge badge-LMG">LMG</span>
+    <span class="type-badge badge-SG">SG</span>
+    <span class="type-badge badge-ピストル">ピストル</span>
+    <span class="type-badge badge-マークスマン">マークスマン</span>
+    <span class="type-badge badge-スナイパー">スナイパー</span>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="toggle-group">
+    <input type="checkbox" id="delayToggle">
+    <label for="delayToggle">ディレイ込み</label>
+  </div>
+  <div class="toggle-group">
+    <input type="checkbox" id="stockToggle">
+    <label for="stockToggle">ラピッドスナイパーストック</label>
+  </div>
+  <div>
+    <select id="boltFilter">
+      <option value="none">SGボルト：無し</option>
+      <option value="white">SGボルト：白</option>
+      <option value="blue">SGボルト：青</option>
+      <option value="purple" selected>SGボルト：紫</option>
+    </select>
+  </div>
+  <div>
+    <select id="colorMode">
+      <option value="type">色分け：武器種</option>
+      <option value="ammo">色分け：弾薬</option>
+    </select>
+  </div>
+  <div>
+    <button id="rpmToggle">表示：RPM</button>
+  </div>
+  <div>
+    <select id="typeFilter">
+      <option value="all">全種別</option>
+      <option value="SMG">SMG</option>
+      <option value="AR">AR</option>
+      <option value="LMG">LMG</option>
+      <option value="SG">ショットガン</option>
+      <option value="ピストル">ピストル</option>
+      <option value="マークスマン">マークスマン</option>
+      <option value="スナイパー">スナイパー</option>
+    </select>
+  </div>
+</div>
+
+<div class="table-wrap">
+<table id="weaponTable">
+  <thead>
+    <tr>
+      <th data-key="name">武器 <span class="sort-icon">↕</span></th>
+      <th data-key="type">武器種 <span class="sort-icon">↕</span></th>
+      <th data-key="ammo">弾薬 <span class="sort-icon">↕</span></th>
+      <th data-key="dmgNum">胴ダメ <span class="sort-icon">↕</span></th>
+      <th data-key="rpmNum" id="rpmHeader">RPM <span class="sort-icon">↕</span></th>
+      <th data-key="dpsNum">DPS <span class="sort-icon">↕</span></th>
+      <th data-key="ttk150">150HP <span class="sort-icon">↕</span></th>
+      <th data-key="ttk175">175HP <span class="sort-icon">↕</span></th>
+      <th data-key="ttk200">200HP <span class="sort-icon">↕</span></th>
+      <th data-key="ttk225">225HP <span class="sort-icon">↕</span></th>
+      <th>備考</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+</div>
+
+<div class="footer">
+  ※ ラピッドスナイパーストック：G7 246→295 / ロングボウ・トリプルテイク 78→94 / センチネル 31→39（増幅37→46） / チャージライフル 44→54<br>
+  ※ ショットガンボルトはセレクトで切り替え（デフォルト紫） / ディヴォーションは最大回転時のみ表示<br>
+  ※ 理論値のためマガジン減少・命中率は考慮していません
+</div>
+
+<script>
+const weapons = [
+  { name: "プラウラー（オート）", type: "SMG", ammo: "ヘビー", dmg: "17", dmgNum: 17, rpm: "795", rpmNum: 795, dps: "225.2", dpsNum: 225.2, ttk: [0.60,0.75,0.83,0.98], delayTtk: null, note: "セレクトファイア後" },
+  { name: "プラウラー（バースト）", type: "SMG", ammo: "ヘビー", dmg: "16", dmgNum: 16, rpm: "705", rpmNum: 705, dps: "188.0", dpsNum: 188.0, ttk: [0.77,0.85,1.02,1.19], delayTtk: null, note: "バースト" },
+  { name: "ハボック", type: "AR", ammo: "エネルギー", dmg: "20", dmgNum: 20, rpm: "672", rpmNum: 672, dps: "224.0", dpsNum: 224.0, ttk: [0.63,0.71,0.80,0.98], delayTtk: [1.05,1.13,1.22,1.40], note: "チャージ約0.42秒" },
+  { name: "C.A.R.", type: "SMG", ammo: "ヘビー", dmg: "14", dmgNum: 14, rpm: "930", rpmNum: 930, dps: "217.0", dpsNum: 217.0, ttk: [0.65,0.77,0.90,1.03], delayTtk: null, note: "" },
+  { name: "オルタネーター（ダブルタップ）", type: "SMG", ammo: "ライト", dmg: "28 (14×2)", dmgNum: 28, rpm: "465", rpmNum: 465, dps: "217.0", dpsNum: 217.0, ttk: [0.65,0.77,0.90,1.03], delayTtk: null, note: "" },
+  { name: "R-99", type: "SMG", ammo: "ライト", dmg: "12", dmgNum: 12, rpm: "1080", rpmNum: 1080, dps: "216.0", dpsNum: 216.0, ttk: [0.67,0.78,0.89,1.00], delayTtk: null, note: "基本マガ18発注意" },
+  { name: "ディヴォーション", type: "LMG", ammo: "エネルギー", dmg: "16", dmgNum: 16, rpm: "300〜900", rpmNum: 900, dps: "80〜240", dpsNum: 240, ttk: [0.60,0.67,0.80,0.93], delayTtk: null, note: "最大回転時のみ" },
+  { name: "L-STAR", type: "LMG", ammo: "ケアパケ", dmg: "20", dmgNum: 20, rpm: "600", rpmNum: 600, dps: "200.0", dpsNum: 200.0, ttk: [0.70,0.80,0.90,1.10], delayTtk: null, note: "ケアパケ" },
+  { name: "フラットライン", type: "AR", ammo: "ヘビー", dmg: "20", dmgNum: 20, rpm: "600", rpmNum: 600, dps: "200.0", dpsNum: 200.0, ttk: [0.70,0.80,0.90,1.10], delayTtk: null, note: "" },
+  { name: "R-301", type: "AR", ammo: "ライト", dmg: "15", dmgNum: 15, rpm: "810", rpmNum: 810, dps: "202.5", dpsNum: 202.5, ttk: [0.67,0.82,0.96,1.04], delayTtk: null, note: "" },
+  { name: "ボルト", type: "SMG", ammo: "エネルギー", dmg: "16", dmgNum: 16, rpm: "720", rpmNum: 720, dps: "192.0", dpsNum: 192.0, ttk: [0.75,0.83,1.00,1.17], delayTtk: null, note: "" },
+  { name: "スピットファイア", type: "LMG", ammo: "ライト", dmg: "21", dmgNum: 21, rpm: "540", rpmNum: 540, dps: "189.0", dpsNum: 189.0, ttk: [0.78,0.89,1.00,1.11], delayTtk: null, note: "" },
+  { name: "オルタネーター", type: "SMG", ammo: "ライト", dmg: "18", dmgNum: 18, rpm: "600", rpmNum: 600, dps: "180.0", dpsNum: 180.0, ttk: [0.80,0.90,1.10,1.20], delayTtk: null, note: "" },
+  { name: "RE-45（バースト）", type: "ピストル", ammo: "エネルギー", dmg: "16", dmgNum: 16, rpm: "720", rpmNum: 720, dps: "192.0", dpsNum: 192.0, ttk: [0.75,0.83,1.00,1.17], delayTtk: [1.17,1.25,1.42,1.59], note: "バースト +0.42s" },
+  { name: "ヘムロック", type: "AR", ammo: "ヘビー", dmg: "21", dmgNum: 21, rpm: "462", rpmNum: 462, dps: "161.7", dpsNum: 161.7, ttk: [0.91,1.04,1.17,1.30], delayTtk: null, note: "" },
+  { name: "ネメシス", type: "AR", ammo: "エネルギー", dmg: "17", dmgNum: 17, rpm: "555〜597", rpmNum: 576, dps: "157〜169", dpsNum: 163, ttk: [0.83,1.05,1.15,1.36], delayTtk: null, note: "チャージ状態で変動" },
+
+  { name: "G7スカウト", type: "マークスマン", ammo: "ライト", dmg: "33", dmgNum: 33,
+    rpm: "246", rpmNum: 246, dps: "135.3", dpsNum: 135.3, ttk: [0.98,1.22,1.46,1.46],
+    stock: { rpm: "295", rpmNum: 295, dps: "162.3", dpsNum: 162.3, ttk: [0.81,1.02,1.22,1.22] },
+    delayTtk: null, note: "" },
+
+  { name: "EVA-8", type: "SG", ammo: "ショットガン", dmg: "56", dmgNum: 56, isSG: true,
+    bolts: {
+      none:   { rpm: "168", rpmNum: 168, dps: "156.8", dpsNum: 156.8, ttk: [0.71,1.07,1.07,1.43] },
+      white:  { rpm: "181", rpmNum: 181, dps: "168.9", dpsNum: 168.9, ttk: [0.66,0.99,0.99,1.33] },
+      blue:   { rpm: "193", rpmNum: 193, dps: "180.1", dpsNum: 180.1, ttk: [0.62,0.93,0.93,1.24] },
+      purple: { rpm: "202", rpmNum: 202, dps: "188.5", dpsNum: 188.5, ttk: [0.59,0.89,0.89,1.19] }
+    }, note: "" },
+
+  { name: "EVA-8（ダブルタップ）", type: "SG", ammo: "ショットガン", dmg: "112 (7×16)", dmgNum: 112, isSG: true,
+    bolts: {
+      none:   { rpm: "75", rpmNum: 75, dps: "140.0", dpsNum: 140.0, ttk: [0.80,0.80,0.80,1.60] },
+      white:  { rpm: "78", rpmNum: 78, dps: "145.6", dpsNum: 145.6, ttk: [0.77,0.77,0.77,1.54] },
+      blue:   { rpm: "81", rpmNum: 81, dps: "151.2", dpsNum: 151.2, ttk: [0.74,0.74,0.74,1.48] },
+      purple: { rpm: "84", rpmNum: 84, dps: "156.8", dpsNum: 156.8, ttk: [0.71,0.71,0.71,1.43] }
+    }, note: "ダブルタップ" },
+
+  { name: "ウィングマン", type: "ピストル", ammo: "スナイパー", dmg: "50", dmgNum: 50, rpm: "168", rpmNum: 168, dps: "140.0", dpsNum: 140.0, ttk: [0.71,1.07,1.07,1.43], delayTtk: null, note: "" },
+  { name: "30-30リピーター", type: "マークスマン", ammo: "ケアパケ", dmg: "51", dmgNum: 51, rpm: "139", rpmNum: 139, dps: "118.2", dpsNum: 118.2, ttk: [0.86,1.30,1.30,1.73], delayTtk: null, note: "ケアパケ・ADSチャージ0.25s" },
+
+  { name: "マスティフ", type: "SG", ammo: "ショットガン", dmg: "95", dmgNum: 95, isSG: true,
+    bolts: {
+      none:   { rpm: "66", rpmNum: 66, dps: "104.5", dpsNum: 104.5, ttk: [0.91,0.91,1.82,1.82] },
+      white:  { rpm: "73", rpmNum: 73, dps: "115.5", dpsNum: 115.5, ttk: [0.82,0.82,1.64,1.64] },
+      blue:   { rpm: "76", rpmNum: 76, dps: "120.3", dpsNum: 120.3, ttk: [0.79,0.79,1.58,1.58] },
+      purple: { rpm: "79", rpmNum: 79, dps: "125.0", dpsNum: 125.0, ttk: [0.76,0.76,1.52,1.52] }
+    }, note: "" },
+
+  { name: "モザンビーク", type: "SG", ammo: "ショットガン", dmg: "51", dmgNum: 51, isSG: true,
+    bolts: {
+      none:   { rpm: "168", rpmNum: 168, dps: "142.8", dpsNum: 142.8, ttk: [0.71,1.07,1.07,1.43] },
+      white:  { rpm: "176", rpmNum: 176, dps: "149.5", dpsNum: 149.5, ttk: [0.68,1.02,1.02,1.36] },
+      blue:   { rpm: "183", rpmNum: 183, dps: "155.5", dpsNum: 155.5, ttk: [0.66,0.98,0.98,1.31] },
+      purple: { rpm: "190", rpmNum: 190, dps: "161.5", dpsNum: 161.5, ttk: [0.63,0.95,0.95,1.26] }
+    }, note: "" },
+
+  { name: "モザンビーク（アキンボ）", type: "SG", ammo: "ショットガン", dmg: "51", dmgNum: 51, isSG: true,
+    bolts: {
+      none:   { rpm: "186", rpmNum: 186, dps: "158.1", dpsNum: 158.1, ttk: [0.65,0.97,0.97,1.29] },
+      white:  { rpm: "195", rpmNum: 195, dps: "165.7", dpsNum: 165.7, ttk: [0.62,0.92,0.92,1.23] },
+      blue:   { rpm: "203", rpmNum: 203, dps: "172.5", dpsNum: 172.5, ttk: [0.59,0.89,0.89,1.18] },
+      purple: { rpm: "210", rpmNum: 210, dps: "178.5", dpsNum: 178.5, ttk: [0.57,0.86,0.86,1.14] }
+    }, note: "アキンボ" },
+
+  { name: "ピースキーパー", type: "SG", ammo: "ショットガン", dmg: "99", dmgNum: 99, isSG: true,
+    bolts: {
+      none:   { rpm: "44", rpmNum: 44, dps: "72.5", dpsNum: 72.5, ttk: [1.36,1.36,2.73,2.73] },
+      white:  { rpm: "47", rpmNum: 47, dps: "77.5", dpsNum: 77.5, ttk: [1.28,1.28,2.55,2.55] },
+      blue:   { rpm: "50", rpmNum: 50, dps: "82.4", dpsNum: 82.4, ttk: [1.20,1.20,2.40,2.40] },
+      purple: { rpm: "51", rpmNum: 51, dps: "84.1", dpsNum: 84.1, ttk: [1.18,1.18,2.35,2.35] }
+    }, note: "" },
+
+  { name: "P2020", type: "ピストル", ammo: "ライト", dmg: "18", dmgNum: 18, rpm: "420", rpmNum: 420, dps: "126.0", dpsNum: 126.0, ttk: [1.14,1.29,1.57,1.71], delayTtk: null, note: "" },
+  { name: "P2020（ハンマー）", type: "ピストル", ammo: "ライト", dmg: "18", dmgNum: 18, rpm: "420", rpmNum: 420, dps: "126.0", dpsNum: 126.0, ttk: [1.14,1.29,1.57,1.71], delayTtk: null, note: "ハンマーポイント（体力に高ダメ）" },
+  { name: "P2020（アキンボ）", type: "ピストル", ammo: "ライト", dmg: "18", dmgNum: 18, rpm: "480", rpmNum: 480, dps: "144.0", dpsNum: 144.0, ttk: [1.00,1.12,1.38,1.50], delayTtk: null, note: "アキンボ" },
+  { name: "P2020（アキンボ+ハンマー）", type: "ピストル", ammo: "ライト", dmg: "18", dmgNum: 18, rpm: "480", rpmNum: 480, dps: "144.0", dpsNum: 144.0, ttk: [1.00,1.12,1.38,1.50], delayTtk: null, note: "アキンボ+ハンマーポイント" },
+
+  { name: "トリプルテイク", type: "マークスマン", ammo: "エネルギー", dmg: "66", dmgNum: 66,
+    rpm: "78", rpmNum: 78, dps: "85.8", dpsNum: 85.8, ttk: [1.54,1.54,2.31,2.31],
+    stock: { rpm: "94", rpmNum: 94, dps: "103.4", dpsNum: 103.4, ttk: [1.28,1.28,1.91,1.91] },
+    delayTtk: null, note: "" },
+
+  { name: "ロングボウ", type: "スナイパー", ammo: "スナイパー", dmg: "60", dmgNum: 60,
+    rpm: "78", rpmNum: 78, dps: "78.0", dpsNum: 78.0, ttk: [1.54,1.54,2.31,2.31],
+    stock: { rpm: "94", rpmNum: 94, dps: "94.0", dpsNum: 94.0, ttk: [1.28,1.28,1.91,1.91] },
+    delayTtk: null, note: "" },
+
+  { name: "クレーバー", type: "スナイパー", ammo: "ケアパケ", dmg: "150", dmgNum: 150, rpm: "25", rpmNum: 25, dps: "62.5", dpsNum: 62.5, ttk: [0.00,2.40,2.40,2.40], delayTtk: null, note: "ケアパケ" },
+
+  { name: "チャージライフル", type: "スナイパー", ammo: "スナイパー", dmg: "75", dmgNum: 75,
+    rpm: "44", rpmNum: 44, dps: "55.0", dpsNum: 55.0, ttk: [1.36,2.73,2.73,2.73],
+    stock: { rpm: "54", rpmNum: 54, dps: "67.5", dpsNum: 67.5, ttk: [1.11,2.22,2.22,2.22] },
+    delayTtk: [2.21,3.58,3.58,3.58], note: "チャージ +0.85s" },
+
+  { name: "チャージライフル（オート）", type: "スナイパー", ammo: "スナイパー", dmg: "45", dmgNum: 45,
+    rpm: "84", rpmNum: 84, dps: "63.0", dpsNum: 63.0, ttk: [2.14,2.14,2.86,2.86],
+    delayTtk: [2.64,2.64,3.36,3.36], note: "オート +0.5s" },
+
+  { name: "センチネル", type: "スナイパー", ammo: "スナイパー", dmg: "70", dmgNum: 70,
+    rpm: "31", rpmNum: 31, dps: "36.2", dpsNum: 36.2, ttk: [3.87,3.87,3.87,5.81],
+    stock: { rpm: "39", rpmNum: 39, dps: "45.5", dpsNum: 45.5, ttk: [3.08,3.08,3.08,4.62] },
+    delayTtk: null, note: "" },
+
+  { name: "センチネル（増幅中）", type: "スナイパー", ammo: "スナイパー", dmg: "88", dmgNum: 88,
+    rpm: "37", rpmNum: 37, dps: "54.3", dpsNum: 54.3, ttk: [1.62,1.62,3.24,3.24],
+    stock: { rpm: "46", rpmNum: 46, dps: "67.5", dpsNum: 67.5, ttk: [1.30,1.30,2.61,2.61] },
+    delayTtk: null, note: "増幅中" },
+
+    { name: "ボセックボウ", type: "マークスマン", ammo: "アロー", dmg: "60", dmgNum: 60,
+    rpm: "88.2", rpmNum: 88.2, dps: "88.2", dpsNum: 88.2, ttk: [1.36,1.36,2.04,2.04],
+    delayTtk: [1.71,1.71,2.39,2.39], note: "チャージ最大時・チャージ0.35s" },
+  { name: "ランページ", type: "LMG", ammo: "ヘビー", dmg: "29", dmgNum: 29, rpm: "300", rpmNum: 300, dps: "145.0", dpsNum: 145.0, ttk: [1.00,1.20,1.20,1.40], delayTtk: null, note: "" },
+  { name: "ランページ（増幅中）", type: "LMG", ammo: "ヘビー", dmg: "29", dmgNum: 29, rpm: "390", rpmNum: 390, dps: "188.5", dpsNum: 188.5, ttk: [0.77,0.92,0.92,1.08], delayTtk: null, note: "増幅中" },
+];
+
+let currentSort = { key: "dpsNum", dir: "desc" };
+let showDelay = false;
+let showStock = false;
+let boltLevel = "purple";
+let colorMode = "type"; // type or ammo
+let showRps = false;
+
+const tbody = document.querySelector("#weaponTable tbody");
+const delayToggle = document.getElementById("delayToggle");
+const stockToggle = document.getElementById("stockToggle");
+const boltFilter = document.getElementById("boltFilter");
+const colorModeSelect = document.getElementById("colorMode");
+const rpmToggle = document.getElementById("rpmToggle");
+const typeFilter = document.getElementById("typeFilter");
+const headers = document.querySelectorAll("th[data-key]");
+const rpmHeader = document.getElementById("rpmHeader");
+const colorLegend = document.getElementById("colorLegend");
+
+function getActive(w) {
+  if (w.isSG && w.bolts) {
+    const b = w.bolts[boltLevel] || w.bolts.purple;
+    return { rpm: b.rpm, rpmNum: b.rpmNum, dps: b.dps, dpsNum: b.dpsNum, ttk: b.ttk };
+  }
+  if (showStock && w.stock) {
+    return { rpm: w.stock.rpm, rpmNum: w.stock.rpmNum, dps: w.stock.dps, dpsNum: w.stock.dpsNum, ttk: w.stock.ttk };
+  }
+  return { rpm: w.rpm, rpmNum: w.rpmNum, dps: w.dps, dpsNum: w.dpsNum, ttk: w.ttk };
+}
+
+function getTtk(w, idx) {
+  const active = getActive(w);
+  if (showDelay && w.delayTtk) return w.delayTtk[idx];
+  return active.ttk[idx];
+}
+
+function formatTtk(val) {
+  if (val >= 9) return "長め";
+  if (val === 0) return "0.00s";
+  return val.toFixed(2) + "s";
+}
+
+function formatRate(rpmNum, rpmStr) {
+  if (showRps) {
+    if (typeof rpmNum === "number" && !isNaN(rpmNum)) {
+      return (rpmNum / 60).toFixed(2);
+    }
+    // range like 555〜597
+    if (rpmStr && rpmStr.includes("〜")) {
+      const parts = rpmStr.split("〜").map(s => parseFloat(s));
+      if (parts.length === 2 && !isNaN(parts[0])) {
+        return (parts[0]/60).toFixed(2) + "〜" + (parts[1]/60).toFixed(2);
+      }
+    }
+    return rpmStr;
+  }
+  return rpmStr;
+}
+
+function updateLegend() {
+  if (colorMode === "type") {
+    colorLegend.innerHTML = `
+      <span class="type-badge badge-SMG">SMG</span>
+      <span class="type-badge badge-AR">AR</span>
+      <span class="type-badge badge-LMG">LMG</span>
+      <span class="type-badge badge-SG">SG</span>
+      <span class="type-badge badge-ピストル">ピストル</span>
+      <span class="type-badge badge-マークスマン">マークスマン</span>
+      <span class="type-badge badge-スナイパー">スナイパー</span>`;
+  } else {
+    colorLegend.innerHTML = `
+      <span class="type-badge badge-ライト">ライト</span>
+      <span class="type-badge badge-ヘビー">ヘビー</span>
+      <span class="type-badge badge-エネルギー">エネルギー</span>
+      <span class="type-badge badge-ショットガン">ショットガン</span>
+      <span class="type-badge badge-ammo-スナイパー">スナイパー</span>
+      <span class="type-badge badge-ケアパケ">ケアパケ</span>
+      <span class="type-badge badge-アロー">アロー</span>`;
+  }
+}
+
+function render() {
+  const filter = typeFilter.value;
+  let list = weapons.filter(w => filter === "all" || w.type === filter);
+
+  list.sort((a, b) => {
+    let va, vb;
+    const key = currentSort.key;
+    const actA = getActive(a);
+    const actB = getActive(b);
+
+    if (key === "name" || key === "type" || key === "ammo") {
+      va = a[key]; vb = b[key];
+      return currentSort.dir === "asc" ? va.localeCompare(vb, "ja") : vb.localeCompare(va, "ja");
+    }
+    if (key === "ttk150") { va = getTtk(a,0); vb = getTtk(b,0); }
+    else if (key === "ttk175") { va = getTtk(a,1); vb = getTtk(b,1); }
+    else if (key === "ttk200") { va = getTtk(a,2); vb = getTtk(b,2); }
+    else if (key === "ttk225") { va = getTtk(a,3); vb = getTtk(b,3); }
+    else if (key === "dpsNum") { va = actA.dpsNum; vb = actB.dpsNum; }
+    else if (key === "rpmNum") { va = actA.rpmNum; vb = actB.rpmNum; }
+    else { va = a[key]; vb = b[key]; }
+
+    if (va < vb) return currentSort.dir === "asc" ? -1 : 1;
+    if (va > vb) return currentSort.dir === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  tbody.innerHTML = "";
+  list.forEach(w => {
+    const act = getActive(w);
+    const tr = document.createElement("tr");
+    if (colorMode === "type") tr.className = "type-" + w.type;
+    else tr.className = "ammo-" + w.ammo;
+
+    const hasDelay = !!w.delayTtk;
+    const hasStock = !!w.stock;
+    const hasBolt = !!w.isSG;
+
+    let noteExtra = "";
+    if (hasBolt) {
+      const labels = { none: "ボルト無し", white: "白ボルト", blue: "青ボルト", purple: "紫ボルト" };
+      noteExtra += ' <span class="bolt-note">(' + labels[boltLevel] + ')</span>';
+    }
+    if (hasStock && showStock) noteExtra += ' <span class="stock-note">(ラピッドストック)</span>';
+    if (hasDelay) noteExtra += showDelay ? ' <span class="delay-note">(ディレイ込み)</span>' : ' <span class="delay-note">(ディレイあり)</span>';
+
+    // 武器種バッジは常に武器種、弾薬列は色分けモードで強調
+    const typeBadge = `<span class="type-badge badge-${w.type}">${w.type}</span>`;
+    const ammoBadgeClass = w.ammo === "スナイパー" ? "badge-ammo-スナイパー" : "badge-" + w.ammo;
+    const ammoCell = colorMode === "ammo"
+      ? `<span class="type-badge ${ammoBadgeClass}">${w.ammo}</span>`
+      : w.ammo;
+
+    tr.innerHTML = `
+      <td class="weapon">${w.name}</td>
+      <td>${colorMode === "type" ? typeBadge : w.type}</td>
+      <td>${ammoCell}</td>
+      <td>${w.dmg}</td>
+      <td class="rpm">${formatRate(act.rpmNum, act.rpm)}</td>
+      <td class="dps">${act.dps}</td>
+      <td>${formatTtk(getTtk(w,0))}</td>
+      <td>${formatTtk(getTtk(w,1))}</td>
+      <td>${formatTtk(getTtk(w,2))}</td>
+      <td>${formatTtk(getTtk(w,3))}</td>
+      <td>${w.note}${noteExtra}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  rpmHeader.innerHTML = (showRps ? "RPS" : "RPM") + ' <span class="sort-icon">↕</span>';
+  headers.forEach(th => {
+    th.classList.remove("sorted-asc", "sorted-desc");
+    const icon = th.querySelector(".sort-icon");
+    if (th.dataset.key === currentSort.key) {
+      th.classList.add(currentSort.dir === "asc" ? "sorted-asc" : "sorted-desc");
+      if (icon) icon.textContent = currentSort.dir === "asc" ? "↑" : "↓";
+    } else if (icon) {
+      icon.textContent = "↕";
+    }
+  });
+}
+
+headers.forEach(th => {
+  th.addEventListener("click", () => {
+    const key = th.dataset.key;
+    if (currentSort.key === key) {
+      currentSort.dir = currentSort.dir === "asc" ? "desc" : "asc";
+    } else {
+      currentSort.key = key;
+      currentSort.dir = (key === "name" || key === "type" || key === "ammo") ? "asc" : "desc";
+    }
+    render();
+  });
+});
+
+delayToggle.addEventListener("change", () => { showDelay = delayToggle.checked; render(); });
+stockToggle.addEventListener("change", () => { showStock = stockToggle.checked; render(); });
+boltFilter.addEventListener("change", () => { boltLevel = boltFilter.value; render(); });
+colorModeSelect.addEventListener("change", () => {
+  colorMode = colorModeSelect.value;
+  updateLegend();
+  render();
+});
+rpmToggle.addEventListener("click", () => {
+  showRps = !showRps;
+  rpmToggle.textContent = showRps ? "表示：RPS" : "表示：RPM";
+  render();
+});
+typeFilter.addEventListener("change", render);
+
+updateLegend();
+render();
+</script>
+
+</body>
+</html>
